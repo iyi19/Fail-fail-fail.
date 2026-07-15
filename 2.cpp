@@ -26,6 +26,7 @@ public:
         setQuantity(quantity);
         setDescription(description);
     }
+    
     Product &setName(const std::string &name) {
         if (name.empty()) {
             throw std::invalid_argument("Product name cannot be empty.");
@@ -91,6 +92,17 @@ public:
     const std::string& getDescription() const {
         return this->description;
     }
+    bool Contains(const std::string& word) const {
+        return description.find(word) != std::string::npos;
+    }
+    Product& ReplaceDescription(const std::string& oldWord, const std::string& newWord) {
+        size_t pos = description.find(oldWord);
+        while(pos != std::string::npos){
+            description.replace(pos, oldWord.length(), newWord);
+            pos = description.find(oldWord, pos + newWord.length());
+        }
+        return *this;
+    }
 
     Product& ApplyDiscount(double percentage) {
         if (percentage < 0 || percentage > 100) {
@@ -117,12 +129,49 @@ public:
     }
 
     Product &Sell(int amount) {
-        if (amount > this->quantity) {
-            throw std::invalid_argument("Not enough quantity in stock.");
+        if (amount <= 0) {
+            throw std::invalid_argument("Invalid amount.");
         }
         this->quantity -= amount;
         return *this;
     }
+
+    Product& IncrementQuantity() {
+        ++quantity;
+        return *this;
+    }
+
+    Product& DecrementQuantity() {
+        if(quantity == 0)
+            throw std::invalid_argument("Out of stock.");
+        --quantity;
+        return *this;
+    }
+
+    double GetStockValue() const {
+        return getPrice() * getQuantity();
+    } 
+
+    Product& MergeProduct(const Product& other) {
+        if (brand != other.brand) {
+            throw std::invalid_argument("Brands are different.");
+        }
+        if (category != other.category) {
+            throw std::invalid_argument("Categories are different.");
+        }
+        quantity += other.quantity;
+        price = (price * quantity + other.price * other.quantity) / (quantity + other.quantity);
+        description += "\nMerged With : " + other.name;
+        return *this;
+    }
+
+    std::string GenerateProductCode() const {
+        std::string code;
+        code += brand.substr(0, std::min((size_t)2, brand.size()));
+        code += category.substr(0, std::min((size_t)2, category.size()));
+        return code;
+    }
+
     virtual void Print() const {
         std::cout << "\nName       : " << getName();
         std::cout << "\nCategory   : " << getCategory();
@@ -130,6 +179,16 @@ public:
         std::cout << "\nPrice      : " << getPrice();
         std::cout << "\nQuantity   : " << getQuantity();
         std::cout << "\nDescription: " << getDescription();
+    }
+
+    Product& Reset() {
+        name.clear();
+        category.clear();
+        brand.clear();
+        price = 1;
+        quantity = 0;
+        description = "No Description";
+        return *this;
     }
 };
 
@@ -192,10 +251,79 @@ public:
     bool IsGamingLaptop() const {
         return (RAM >= 16 && Storage >= 512);
     }
+
     Laptop& UpgradeStorage(int storage) {
         setStorage(storage);
         return *this;
     }
+
+    int PerformanceScore() const {
+        return RAM * 10 + Storage / 100;
+    }
+
+    double CalculateDepreciation(int years) const {
+        if (years < 0) {
+            throw std::invalid_argument("Invalid years.");
+        }
+        double currentPrice = getPrice();
+        for (int i = 0; i < years; ++i) {
+            currentPrice *= 0.9; 
+        }
+        return currentPrice;
+    }
+
+    void CalculateInstallment(int months, double interest) const {
+        if (months <= 0) {
+            throw std::invalid_argument("Invalid months.");
+        }
+        if (interest < 0) {
+            throw std::invalid_argument("Invalid interest.");
+        }
+        double total = getPrice() + (getPrice() * interest / 100.0);
+        double monthly = total / months;
+        std::cout << "\n" << std::string(5, '-') << " Installment Plan " << std::string(5, '-') << "\n";
+        std::cout << "Product        : " << getName() << '\n';
+        std::cout << "Original Price : " << getPrice() << '\n';
+        std::cout << "Interest       : " << interest << "%\n";
+        std::cout << "Total Price    : " << total << '\n';
+        std::cout << "Months         : " << months << '\n';
+        std::cout << "Monthly Payment: " << monthly << '\n';
+    }
+
+    void RecommendUsage() const {
+        std::cout << "\nRecommended Usage:\n";
+        if (RAM >= 32 && Storage >= 1024) {
+            std::cout << "- Gaming\n- AI Development\n- Video Editing\n";
+        } else if (RAM >= 16) {
+            std::cout << "- Programming\n- Gaming\n- Graphic Design\n";
+        } else if (RAM >= 8) {
+            std::cout << "- Office Work\n- Programming Basics\n";
+        } else {
+            std::cout << "- Browsing\n- Watching Videos\n- Study\n";
+        }
+    }
+
+    void RecommendUpgrade() const {
+        std::cout << "\n" << std::string(5, '-') << " Upgrade Recommendation " << std::string(5, '-') << "\n";
+        bool upgraded = false;
+        if (RAM < 16) {
+            std::cout << "- Upgrade RAM to at least 16 GB.\n";
+            upgraded = true;
+        }
+        if (Storage < 512) {
+            std::cout << "- Upgrade Storage to at least 512 GB SSD.\n";
+            upgraded = true;
+        }
+        if (CPU.find("i3") != std::string::npos ||
+            CPU.find("Ryzen 3") != std::string::npos) {
+            std::cout << "- Upgrade CPU for better performance.\n";
+            upgraded = true;
+        }
+        if (!upgraded) {
+            std::cout << "This laptop does not need any upgrades.\n";
+        }
+    }
+
     void Print() const override {
         Product::Print();
         std::cout << "\nCPU        : " << getCPU();
@@ -209,10 +337,10 @@ int32_t main() {
 
     try {
         Laptop laptop(
-            "Victus 15",
+            "Nitro v 16",
             "Gaming",
             "HP",
-            35000,
+            60000,
             10,
             "High performance gaming laptop",
             "Intel Core i7-13700H",
@@ -220,39 +348,36 @@ int32_t main() {
             512
         );
 
-        std::cout << std::string(10, '-') << " Laptop Information " << std::string(10, '-') << "\n";
         laptop.Print();
 
-        std::cout << "\n\n" << std::string(10, '-') << " After Update " << std::string(10, '-') << "\n";
+        std::cout << "\n\nStock Value - " << laptop.GetStockValue() << '\n';
 
-        laptop.setName("ROG Strix G16")
-              .setCategory("Gaming Laptop")
-              .setBrand("ASUS")
-              .setPrice(42000)
-              .setQuantity(15)
-              .setDescription("Powerful gaming laptop")
-              .ApplyDiscount(10)
-              .IncreasePrice(5)
-              .Sell(3)
-              .Restock(8);
+        std::cout << "Product Code - " << laptop.GenerateProductCode() << '\n';
 
-        laptop.setCPU("Intel Core i9-14900HX")
-              .setRAM(32)
-              .setStorage(1024);
+        std::cout << "Contains Gaming ? " << (laptop.Contains("gaming") ? "Yes" : "No") << '\n';
 
+        laptop.ReplaceDescription("gaming", "professional");
+        laptop.ApplyDiscount(10);
+        laptop.IncreasePrice(5);
+        laptop.Restock(5);
+        laptop.Sell(3);
+
+        std::cout << "\nAfter Updates:\n";
         laptop.Print();
 
-        std::cout << "\n\nTotal Stock Value : "
-                  << laptop.getPrice() * laptop.getQuantity()
-                  << '\n';
+        std::cout << "\nPerformance Score - " << laptop.PerformanceScore();
 
-        std::cout << "Gaming Laptop : "
-                  << (laptop.IsGamingLaptop() ? "Yes" : "No")
-                  << '\n';
-    }
-    catch (const std::exception& ex) {
-        std::cout << "Error: " << ex.what() << '\n';
-    }
+        std::cout << "\nPrice after 3 years - " << laptop.CalculateDepreciation(3);
 
+        laptop.CalculateInstallment(12, 8);
+
+        laptop.RecommendUsage();
+
+        laptop.RecommendUpgrade();
+
+    }
+    catch (const std::exception& e) {
+        std::cout << "Error: " << e.what();
+    }
     return 0;
 }
