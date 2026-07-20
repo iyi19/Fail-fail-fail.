@@ -6,24 +6,27 @@ auto _ = []() {
 }();
 
 signed main() {
-    int n;
-    cin >> n;
-    vector<int> x(n);
-    for (auto &&i : x)
-        cin >> i;
-    auto NextGreaterElement = [&]() {
+    auto Problem = [&](vector<int>& x) {
+        int n = x.size();
         stack<int> s;
-        vector<int> ans(n);
+        vector<int> r(n);
         for (int i = n - 1; i >= 0; i--) {
             while (!s.empty() && s.top() <= x[i])
                 s.pop();
             if (s.empty())
-                ans[i] = -1;
+                r[i] = -1;
             else
-                ans[i] = s.top();
+                r[i] = s.top();
             s.push(x[i]);
         }
-        return ans;
+        return r;
     };
     return 0;
 }
+/*
+Traverse from right to left.
+Remove all elements that are smaller than or equal to the current element.
+The first element remaining in the stack is the answer.
+Push the current element onto the stack.
+*/
+
