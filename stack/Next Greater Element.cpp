@@ -11,7 +11,7 @@ signed main() {
     vector<int> x(n);
     for (auto &&i : x)
         cin >> i;
-    auto k = [&]() {
+    auto NextGreaterElement = [&]() {
         stack<int> s;
         vector<int> ans(n);
         for (int i = n - 1; i >= 0; i--) {
@@ -27,9 +27,3 @@ signed main() {
     };
     return 0;
 }
-/*
-  Traverse from right to left.
-  Remove all elements that are smaller than or equal to the current element.
-  The first element remaining in the stack is the answer.
-  Push the current element onto the stack.
-*/
